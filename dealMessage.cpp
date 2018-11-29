@@ -1,7 +1,7 @@
 #include "dealMessage.h"
 
-#include<ws2tcpip.h> //multicast
-#include <winsock2.h>  
+#include<WS2tcpip.h> //multicast
+#include<WinSock2.h>
 #pragma comment(lib,"ws2_32.lib")  
 
 #define g_ip	"127.0.0.1"
