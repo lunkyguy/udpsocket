@@ -1,6 +1,12 @@
 #include "dealMessage.h"
-#include<WINSOCK2.H>
-#pragma comment(lib, "ws2_32.lib")
+
+#include<ws2tcpip.h> //multicast
+#include <winsock2.h>  
+#pragma comment(lib,"ws2_32.lib")  
+
+#define g_ip	"127.0.0.1"
+#define g_multi_ip "225.0.0.1"
+#define g_port	8888
 
 GetMessageThread::GetMessageThread()
 {
@@ -14,34 +20,61 @@ GetMessageThread::~GetMessageThread()
 // 启用线程
 void GetMessageThread::run()
 {
-	//初始化
-	WSADATA wsaData;
-	SOCKET RecvSocket;
-	sockaddr_in RecvAddr;//服务器地址
-	int Port = 4000;//服务器监听地址
-	char RecvBuf[1024];//发送数据的缓冲区
-	int BufLen = 1024;//缓冲区大小
-	sockaddr_in SenderAddr;
-	int SenderAddrSize = sizeof(SenderAddr);
-	//初始化Socket
-	WSAStartup(MAKEWORD(2, 2), &wsaData);
-	//创建接收数据报的socket
-	RecvSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	//将socket与制定端口和0.0.0.0绑定
-	RecvAddr.sin_family = AF_INET;
-	RecvAddr.sin_port = htons(Port);
-	RecvAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind(RecvSocket, (SOCKADDR *)&RecvAddr, sizeof(RecvAddr));
-	//调用Recvfrom函数在绑定的socket上接收数据
-	printf("接收报文\n");
-	recvfrom(RecvSocket, RecvBuf, BufLen, 0, (SOCKADDR *)&SenderAddr, &SenderAddrSize);
-	//关闭socket，结束接收数据
-	printf("停止接收，关闭socket\n");
-	closesocket(RecvSocket);
-	//释放资源，退出
-	printf("退出\n");
+	WSADATA wsa;
+
+	int ierr = WSAStartup(MAKEWORD(2, 2), &wsa);
+	if (ierr != 0)
+	{
+		printf("WSAStartup faile\n");
+	}
+
+	SOCKET m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (INVALID_SOCKET == m_socket)
+	{
+		printf("socket faile\n");
+	}
+
+	int iloop = 1;
+	if (SOCKET_ERROR == setsockopt(m_socket, IPPROTO_IP, IP_MULTICAST_LOOP, (const char*)&iloop, sizeof(iloop)))
+	{
+		printf("setsockopt faile\n");
+	}
+
+	sockaddr_in m_addr;
+	m_addr.sin_family = AF_INET;
+	m_addr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+	m_addr.sin_port = htons(g_port);
+
+	if (SOCKET_ERROR == bind(m_socket, (const sockaddr*)&m_addr, sizeof(m_addr)))
+	{
+		printf("bind faile\n");
+	}
+
+	struct ip_mreq mreq;
+
+	mreq.imr_multiaddr.S_un.S_addr = inet_addr(g_multi_ip);
+	mreq.imr_interface.S_un.S_addr = inet_addr(g_ip);
+
+	if (SOCKET_ERROR == setsockopt(m_socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)))
+	{
+		printf("setsockopt faile\n");
+	}
+
+	char buf[MAX_PATH] = { 0 };
+	int irecv = 0;
+	SOCKADDR  clientAddr;
+	int ifromLen = sizeof(SOCKADDR);
+
+	while (true)
+	{
+		irecv = recvfrom(m_socket, buf, MAX_PATH, 0, &clientAddr, &ifromLen);
+		if (irecv > 0)
+		{
+			printf("recv = %s\n", buf);
+		}
+	}
+	closesocket(m_socket);
 	WSACleanup();
-	return;
 }
 
 SendMessageThread::SendMessageThread()
@@ -56,28 +89,45 @@ SendMessageThread::~SendMessageThread()
 // 启用线程
 void SendMessageThread::run()
 {
-	//初始化
-	WSADATA wsaData;
-	SOCKET SendSocket;
-	sockaddr_in RecvAddr;//服务器地址
-	int Port = 4000;//服务器监听地址
-	char SendBuf[1024];//发送数据的缓冲区
-	int BufLen = 1024;//缓冲区大小
-	//初始化Socket
-	WSAStartup(MAKEWORD(2, 2), &wsaData);
-	//创建Socket对象
-	SendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	//设置服务器地址
-	RecvAddr.sin_family = AF_INET;
-	RecvAddr.sin_port = htons(Port);
-	RecvAddr.sin_addr.s_addr = inet_addr("192.168.137.1");
-	//向服务器发送数据报
-	printf("发送报文\n");
-	sendto(SendSocket, SendBuf, BufLen, 0, (SOCKADDR *)&RecvAddr, sizeof(RecvAddr));
-	//发送完成，关闭Socket
-	printf("发送完成，关闭Socket\n");
-	closesocket(SendSocket);
-	printf("退出\n");
+	WSADATA wsa;
+
+	int ierr = WSAStartup(MAKEWORD(2, 2), &wsa);
+	if (ierr != 0)
+	{
+		printf("WSAStartup faile\n");
+	}
+
+	SOCKET m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (INVALID_SOCKET == m_socket)
+	{
+		printf("socket faile\n");
+	}
+
+	int ioptv = 0;
+	if (SOCKET_ERROR == setsockopt(m_socket, SOL_SOCKET, SO_BROADCAST, (const char*)&ioptv, sizeof(ioptv)))
+	{
+		printf("setsockopt faile\n");
+	}
+
+	sockaddr_in m_addr;
+
+	ZeroMemory(&m_addr, sizeof(m_addr));
+
+	m_addr.sin_family = AF_INET;
+	m_addr.sin_addr.S_un.S_addr = inet_addr(g_multi_ip);
+	m_addr.sin_port = htons(g_port);
+
+	char buf[MAX_PATH] = { "你好,socket" };
+	int isend = 0;
+
+	while (true)
+	{
+		isend = sendto(m_socket, buf, MAX_PATH, 0, (const sockaddr*)&m_addr, sizeof(m_addr));
+		if (isend != MAX_PATH)
+		{
+			printf("sendto faile\n");
+		}
+	}
+	closesocket(m_socket);
 	WSACleanup();
-	return;
 }
