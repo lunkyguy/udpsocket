@@ -14,8 +14,8 @@
 class UDPServer
 {
 private:
-	WSADATA wsaData;
 	#ifdef WIN32
+		WSADATA wsaData;
 		SOCKET serverSocket;
 	#else
 		int serverSocket; //
@@ -32,8 +32,8 @@ public:
 class UDPClient
 {
 private:
-	WSADATA wsaData;
 #ifdef WIN32
+	WSADATA wsaData;
 	SOCKET clientSocket;
 #else
 	int clientSocket;

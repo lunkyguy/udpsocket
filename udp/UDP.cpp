@@ -1,5 +1,6 @@
-#include"UDP.h"
+#include "UDP.h"
 #include <stdio.h>
+#include <string.h>
 #define MCAST_ADDR  "224.100.100.100"
 
 //接收报文
@@ -23,7 +24,7 @@ void UDPServer::listen(const int port)
 	serverSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverSockAddr.sin_port = htons(port);
 
-	if (bind(serverSocket, (SOCKADDR*)&serverSockAddr, sizeof(serverSockAddr))<0)
+	if (bind(serverSocket, (const sockaddr*)&serverSockAddr, sizeof(sockaddr_in))<0)
 	{
 		perror("bind()");
 		return;
@@ -55,7 +56,7 @@ void UDPServer::receive() const
 	#else
 		socklen_t  serverSockAddrSize = sizeof(sockaddr_in);
 	#endif // WIN32
-	if (recvfrom(serverSocket, buf, sizeof(buf), 0, (SOCKADDR *)&serverSockAddr, &serverSockAddrSize) < 0)
+	if (recvfrom(serverSocket, buf, sizeof(buf), 0, (sockaddr*)&serverSockAddr, &serverSockAddrSize) < 0)
 	{
 		perror("recvfrom()");
 		return;
@@ -97,7 +98,7 @@ void UDPClient::setSockAddr(const int Port)
 
 void UDPClient::sendData(const char *buf, const int len) const
 {
-	if (sendto(clientSocket, buf, len, 0, (sockaddr*)&clientSockAddr, sizeof(clientSockAddr)) < 0)
+	if (sendto(clientSocket, buf, len, 0, (sockaddr*)&clientSockAddr, sizeof(sockaddr_in)) < 0)
 	{
 		perror("sendto()");
 		return;

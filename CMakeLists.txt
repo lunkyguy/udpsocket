@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(test)
+add_definitions(-std=c++11)
 add_subdirectory(udp)
 set(APP_SRC "main.cpp")
 add_executable(msgDist ${APP_SRC})
-target_link_libraries(msgDist udp)
+target_link_libraries(msgDist udp -lpthread)
