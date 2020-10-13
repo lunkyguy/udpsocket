@@ -1,36 +1,147 @@
-#include"udp/UDP.h"
-#include<thread>
+#include <iostream>
+#include <cstring>
+#include <thread>
 
-const char buf[1024] = "This is a udp test message";
+#ifdef _MSC_VER
+#include <WinSock2.h>
+#include <WS2tcpip.h> //multicast
+#pragma comment(lib,"ws2_32.lib")  
+#else
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<unistd.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
 
-void sendMsg(UDPClient* client)
-{
-	while (1)
-	{
-		client->sendData(buf, sizeof(buf));
-	}
-}
+#define SOCKET int
+#define closesocket close
 
-void receiveMsg(UDPServer* server)
-{
-	while (1)
-	{
-		server->receive();
-	}
-}
+#endif 
+
+#define MCAST_ADDR  "224.100.100.100"
+#define PORT 8876
+
+#define MAX_LEN 1024
 
 int main()
 {
-	UDPServer* server =new UDPServer;
-	UDPClient* client = new UDPClient;
-	server->listen(4000);
-	client->setSockAddr(4000);
-	client->sendData(buf, sizeof(buf));
-	std::thread t1(receiveMsg, server);
-	std::thread t2(sendMsg, client);
-	t1.join();
-	t2.join();
+	auto udp_client_fun = []()
+	{
+		//1.创建套接字
+#ifdef _MSC_VER
+		WORD wVersionRequested = MAKEWORD(1, 1);
+		WSADATA wsaData;
+		if (WSAStartup(wVersionRequested, &wsaData) != 0)
+		{
+			std::cout << "WSAStartup error" << std::endl;
+			return -1;
+		}
+#endif
+		//2.创建SOCKET
+		SOCKET client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (-1 == client_socket)
+		{
+			std::cout << "create error" << std::endl;
+			return -1;
+		}
 
-	delete server;
-	delete client;
+		//3.设置IP和端口号
+		sockaddr_in client_sockAddr;
+		memset(&client_sockAddr, 0, sizeof(sockaddr_in));
+		client_sockAddr.sin_family = AF_INET;
+		inet_pton(AF_INET, MCAST_ADDR, &client_sockAddr.sin_addr.s_addr);
+		client_sockAddr.sin_port = htons(PORT);
+
+		while (true)
+		{
+		//4.发送报文
+			const char buf[MAX_LEN] = "This is a udp test message";
+			if (sendto(client_socket, buf, MAX_LEN, 0, (const sockaddr*)&client_sockAddr, sizeof(sockaddr_in)) > 0)
+			{
+				std::cout << "send message" << std::endl;
+				//return -1;
+			}
+		}
+		closesocket(client_socket);
+	};
+	auto udp_server_fun = []()
+	{
+		//1.创建套接字
+#ifdef _MSC_VER
+		WORD wVersionRequested = MAKEWORD(1, 1);
+		WSADATA wsaData;	
+		if (WSAStartup(wVersionRequested, &wsaData) != 0)
+		{
+			std::cout << "WSAStartup error" << std::endl;
+			return -1;
+		}
+#endif
+		//2.创建SOCKET
+		SOCKET server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (-1 == server_socket)
+		{
+			std::cout << "create error" << std::endl;
+			return -1;
+		}
+
+		//3.设置IP和端口号
+		sockaddr_in server_sockAddr;
+		memset(&server_sockAddr, 0, sizeof(sockaddr_in));
+		server_sockAddr.sin_family = AF_INET;
+		server_sockAddr.sin_addr.s_addr = INADDR_ANY;
+		server_sockAddr.sin_port = htons(PORT);
+
+		//4.添加组播
+		struct ip_mreq mreq;
+		inet_pton(AF_INET, MCAST_ADDR, &mreq.imr_multiaddr.s_addr);
+		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+		if (setsockopt(server_socket, 0, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) < 0)
+		{
+			std::cout << "setsockopt():IP_ADD_MEMBERSHIP" << std::endl;
+			return  -1;
+		}
+
+		//5.消息回送控制
+		int loop = 1;
+		if (setsockopt(server_socket, 0, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
+		{
+			std::cout << "setsockopt:IP_MULTICAST_LOOP error" << std::endl;
+			return -1;
+		}
+
+		//6.端口复用
+		int bOptval = 1;
+		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
+		{
+			std::cout << "setsockopt:SO_REUSEADDR error" << std::endl;
+			return  -1;
+		}
+
+		//7.绑定端口
+		if (bind(server_socket, (const sockaddr*)&server_sockAddr, sizeof(sockaddr_in)) < 0)
+		{
+			std::cout << "bind error" << std::endl;
+			return -1;
+		}
+
+		//8.接收报文
+		while (true)
+		{
+			char buf[MAX_LEN];
+			memset(buf, 0, MAX_LEN);
+			socklen_t serverSockAddrSize = sizeof(sockaddr_in);
+			if (recvfrom(server_socket, buf, sizeof(buf), 0, (sockaddr*)&server_sockAddr, &serverSockAddrSize) > 0)
+			{
+				std::cout << buf << std::endl;
+				//return 0;
+			}			
+		}
+		closesocket(server_socket);
+	};
+
+	std::thread t_udp_client = std::thread(udp_client_fun);
+	std::thread t_udp_server = std::thread(udp_server_fun);
+
+	if (t_udp_client.joinable()) t_udp_client.join();
+	if (t_udp_server.joinable()) t_udp_server.join();
 }
