@@ -112,7 +112,7 @@ int main()
 
 		//6.端口复用
 		int bOptval = 1;//参数loop设置为0禁止复用，设置为1允许复用
-		if (setsockopt(server_socket, IPPROTO_IP, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
+		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
 		{
 			std::cout << "setsockopt:SO_REUSEADDR error" << std::endl;
 			closesocket(server_socket);
