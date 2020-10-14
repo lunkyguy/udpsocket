@@ -38,7 +38,7 @@ int main()
 		}
 #endif
 		//2.创建SOCKET
-		SOCKET client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		SOCKET client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 		if (-1 == client_socket)
 		{
 			std::cout << "create error" << std::endl;
@@ -77,7 +77,7 @@ int main()
 		}
 #endif
 		//2.创建SOCKET
-		SOCKET server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		SOCKET server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 		if (-1 == server_socket)
 		{
 			std::cout << "create error" << std::endl;
@@ -95,7 +95,7 @@ int main()
 		struct ip_mreq mreq;
 		inet_pton(AF_INET, MCAST_ADDR, &mreq.imr_multiaddr.s_addr);
 		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-		if (setsockopt(server_socket, 0, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) < 0)
+		if (setsockopt(server_socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) < 0)
 		{
 			std::cout << "setsockopt():IP_ADD_MEMBERSHIP" << std::endl;
 			closesocket(server_socket);
@@ -103,8 +103,8 @@ int main()
 		}
 
 		//5.消息回送控制
-		int loop = 1;
-		if (setsockopt(server_socket, 0, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
+		int loop = 1; //参数loop设置为0禁止回送，设置为1允许回送
+		if (setsockopt(server_socket, IPPROTO_IP, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
 		{
 			std::cout << "setsockopt:IP_MULTICAST_LOOP error" << std::endl;
 			closesocket(server_socket);
@@ -112,8 +112,8 @@ int main()
 		}
 
 		//6.端口复用
-		int bOptval = 1;
-		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
+		int bOptval = 1;//参数loop设置为0禁止复用，设置为1允许复用
+		if (setsockopt(server_socket, IPPROTO_IP, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
 		{
 			std::cout << "setsockopt:SO_REUSEADDR error" << std::endl;
 			closesocket(server_socket);
