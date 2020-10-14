@@ -100,7 +100,7 @@ int main()
 			closesocket(server_socket);
 			return  -1;
 		}
-
+		
 		//5.消息回送控制
 		int loop = 1; //参数loop设置为0禁止回送，设置为1允许回送
 		if (setsockopt(server_socket, IPPROTO_IP, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
@@ -133,11 +133,13 @@ int main()
 			char buf[DEFAULT_BUFLEN];
 			memset(buf, 0, DEFAULT_BUFLEN);
 			socklen_t serverSockAddrSize = sizeof(sockaddr_in);
-			if (recvfrom(server_socket, buf, sizeof(buf), 0, (sockaddr*)&server_sockAddr, &serverSockAddrSize) > 0)
+			if (recvfrom(server_socket, buf, sizeof(buf), 0, (sockaddr*)&server_sockAddr, &serverSockAddrSize) < 0)
 			{
-				std::cout << buf << std::endl;
-				//return 0;
-			}			
+				std::cout << "recvfrom error" << std::endl;
+				closesocket(server_socket);
+				return -1;
+			}	
+			std::cout << buf << std::endl;
 		}
 		closesocket(server_socket);
 	};
