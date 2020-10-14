@@ -29,7 +29,7 @@ int main()
 	{
 		//1.创建套接字
 #ifdef _MSC_VER
-		WORD wVersionRequested = MAKEWORD(1, 1);
+		WORD wVersionRequested = MAKEWORD(2, 2);
 		WSADATA wsaData;
 		if (WSAStartup(wVersionRequested, &wsaData) != 0)
 		{
@@ -68,7 +68,7 @@ int main()
 	{
 		//1.创建套接字
 #ifdef _MSC_VER
-		WORD wVersionRequested = MAKEWORD(1, 1);
+		WORD wVersionRequested = MAKEWORD(2, 2);
 		WSADATA wsaData;	
 		if (WSAStartup(wVersionRequested, &wsaData) != 0)
 		{
