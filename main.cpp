@@ -98,6 +98,7 @@ int main()
 		if (setsockopt(server_socket, 0, IP_ADD_MEMBERSHIP, (const char*)&mreq, sizeof(mreq)) < 0)
 		{
 			std::cout << "setsockopt():IP_ADD_MEMBERSHIP" << std::endl;
+			closesocket(server_socket);
 			return  -1;
 		}
 
@@ -106,6 +107,7 @@ int main()
 		if (setsockopt(server_socket, 0, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
 		{
 			std::cout << "setsockopt:IP_MULTICAST_LOOP error" << std::endl;
+			closesocket(server_socket);
 			return -1;
 		}
 
@@ -114,6 +116,7 @@ int main()
 		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
 		{
 			std::cout << "setsockopt:SO_REUSEADDR error" << std::endl;
+			closesocket(server_socket);
 			return  -1;
 		}
 
@@ -121,6 +124,7 @@ int main()
 		if (bind(server_socket, (const sockaddr*)&server_sockAddr, sizeof(sockaddr_in)) < 0)
 		{
 			std::cout << "bind error" << std::endl;
+			closesocket(server_socket);
 			return -1;
 		}
 
