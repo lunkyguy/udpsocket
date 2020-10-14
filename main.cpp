@@ -3,15 +3,15 @@
 #include <thread>
 
 #ifdef _MSC_VER
-#include <WinSock2.h>
-#include <WS2tcpip.h> //multicast
+#include <winsock2.h>
+#include <Ws2tcpip.h>
 #pragma comment(lib,"ws2_32.lib")  
 #else
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<unistd.h>
-#include<netinet/in.h>
-#include<arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define SOCKET int
 #define closesocket close
@@ -19,9 +19,8 @@
 #endif 
 
 #define MCAST_ADDR  "224.100.100.100"
-#define PORT 8876
-
-#define MAX_LEN 1024
+#define DEFAULT_PORT 27015
+#define DEFAULT_BUFLEN 512
 
 int main()
 {
@@ -50,13 +49,13 @@ int main()
 		memset(&client_sockAddr, 0, sizeof(sockaddr_in));
 		client_sockAddr.sin_family = AF_INET;
 		inet_pton(AF_INET, MCAST_ADDR, &client_sockAddr.sin_addr.s_addr);
-		client_sockAddr.sin_port = htons(PORT);
+		client_sockAddr.sin_port = htons(DEFAULT_PORT);
 
 		while (true)
 		{
 		//4.发送报文
-			const char buf[MAX_LEN] = "This is a udp test message";
-			if (sendto(client_socket, buf, MAX_LEN, 0, (const sockaddr*)&client_sockAddr, sizeof(sockaddr_in)) > 0)
+			const char buf[DEFAULT_BUFLEN] = "This is a udp test message";
+			if (sendto(client_socket, buf, DEFAULT_BUFLEN, 0, (const sockaddr*)&client_sockAddr, sizeof(sockaddr_in)) > 0)
 			{
 				std::cout << "send message" << std::endl;
 				//return -1;
@@ -89,7 +88,7 @@ int main()
 		memset(&server_sockAddr, 0, sizeof(sockaddr_in));
 		server_sockAddr.sin_family = AF_INET;
 		server_sockAddr.sin_addr.s_addr = INADDR_ANY;
-		server_sockAddr.sin_port = htons(PORT);
+		server_sockAddr.sin_port = htons(DEFAULT_PORT);
 
 		//4.添加组播
 		struct ip_mreq mreq;
@@ -131,8 +130,8 @@ int main()
 		//8.接收报文
 		while (true)
 		{
-			char buf[MAX_LEN];
-			memset(buf, 0, MAX_LEN);
+			char buf[DEFAULT_BUFLEN];
+			memset(buf, 0, DEFAULT_BUFLEN);
 			socklen_t serverSockAddrSize = sizeof(sockaddr_in);
 			if (recvfrom(server_socket, buf, sizeof(buf), 0, (sockaddr*)&server_sockAddr, &serverSockAddrSize) > 0)
 			{
