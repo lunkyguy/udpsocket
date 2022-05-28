@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <cstring>
 #include <thread>
 
@@ -26,7 +26,7 @@ int main()
 {
 	auto udp_client_fun = []()
 	{
-		//1.´´½¨Ì×½Ó×Ö
+		//1.åˆ›å»ºå¥—æ¥å­—
 #ifdef _MSC_VER
 		WORD wVersionRequested = MAKEWORD(2, 2);
 		WSADATA wsaData;
@@ -36,7 +36,7 @@ int main()
 			return -1;
 		}
 #endif
-		//2.´´½¨SOCKET
+		//2.åˆ›å»ºSOCKET
 		SOCKET client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 		if (-1 == client_socket)
 		{
@@ -44,7 +44,7 @@ int main()
 			return -1;
 		}
 
-		//3.ÉèÖÃIPºÍ¶Ë¿ÚºÅ
+		//3.è®¾ç½®IPå’Œç«¯å£å·
 		sockaddr_in client_sockAddr;
 		memset(&client_sockAddr, 0, sizeof(sockaddr_in));
 		client_sockAddr.sin_family = AF_INET;
@@ -53,7 +53,7 @@ int main()
 
 		while (true)
 		{
-		//4.·¢ËÍ±¨ÎÄ
+		//4.å‘é€æŠ¥æ–‡
 			const char buf[DEFAULT_BUFLEN] = "This is a udp test message";
 			if (sendto(client_socket, buf, DEFAULT_BUFLEN, 0, (const sockaddr*)&client_sockAddr, sizeof(sockaddr_in)) > 0)
 			{
@@ -65,7 +65,7 @@ int main()
 	};
 	auto udp_server_fun = []()
 	{
-		//1.´´½¨Ì×½Ó×Ö
+		//1.åˆ›å»ºå¥—æ¥å­—
 #ifdef _MSC_VER
 		WORD wVersionRequested = MAKEWORD(2, 2);
 		WSADATA wsaData;	
@@ -75,7 +75,7 @@ int main()
 			return -1;
 		}
 #endif
-		//2.´´½¨SOCKET
+		//2.åˆ›å»ºSOCKET
 		SOCKET server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 		if (-1 == server_socket)
 		{
@@ -83,14 +83,14 @@ int main()
 			return -1;
 		}
 
-		//3.ÉèÖÃIPºÍ¶Ë¿ÚºÅ
+		//3.è®¾ç½®IPå’Œç«¯å£å·
 		sockaddr_in server_sockAddr;
 		memset(&server_sockAddr, 0, sizeof(sockaddr_in));
 		server_sockAddr.sin_family = AF_INET;
 		server_sockAddr.sin_addr.s_addr = INADDR_ANY;
 		server_sockAddr.sin_port = htons(DEFAULT_PORT);
 
-		//4.Ìí¼Ó×é²¥
+		//4.æ·»åŠ ç»„æ’­
 		struct ip_mreq mreq;
 		inet_pton(AF_INET, MCAST_ADDR, &mreq.imr_multiaddr.s_addr);
 		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
@@ -101,8 +101,8 @@ int main()
 			return  -1;
 		}
 		
-		//5.ÏûÏ¢»ØËÍ¿ØÖÆ
-		int loop = 1; //²ÎÊıloopÉèÖÃÎª0½ûÖ¹»ØËÍ£¬ÉèÖÃÎª1ÔÊĞí»ØËÍ
+		//5.æ¶ˆæ¯å›é€æ§åˆ¶
+		int loop = 1; //å‚æ•°loopè®¾ç½®ä¸º0ç¦æ­¢å›é€ï¼Œè®¾ç½®ä¸º1å…è®¸å›é€
 		if (setsockopt(server_socket, IPPROTO_IP, IP_MULTICAST_LOOP, (const char*)&loop, sizeof(loop)) < 0)
 		{
 			std::cout << "setsockopt:IP_MULTICAST_LOOP error" << std::endl;
@@ -110,8 +110,8 @@ int main()
 			return -1;
 		}
 
-		//6.¶Ë¿Ú¸´ÓÃ
-		int bOptval = 1;//²ÎÊıloopÉèÖÃÎª0½ûÖ¹¸´ÓÃ£¬ÉèÖÃÎª1ÔÊĞí¸´ÓÃ
+		//6.ç«¯å£å¤ç”¨
+		int bOptval = 1;//å‚æ•°loopè®¾ç½®ä¸º0ç¦æ­¢å¤ç”¨ï¼Œè®¾ç½®ä¸º1å…è®¸å¤ç”¨
 		if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&bOptval, sizeof(bOptval)) < 0)
 		{
 			std::cout << "setsockopt:SO_REUSEADDR error" << std::endl;
@@ -119,7 +119,7 @@ int main()
 			return  -1;
 		}
 
-		//7.°ó¶¨¶Ë¿Ú
+		//7.ç»‘å®šç«¯å£
 		if (bind(server_socket, (const sockaddr*)&server_sockAddr, sizeof(sockaddr_in)) < 0)
 		{
 			std::cout << "bind error" << std::endl;
@@ -127,7 +127,7 @@ int main()
 			return -1;
 		}
 
-		//8.½ÓÊÕ±¨ÎÄ
+		//8.æ¥æ”¶æŠ¥æ–‡
 		while (true)
 		{
 			char buf[DEFAULT_BUFLEN];
